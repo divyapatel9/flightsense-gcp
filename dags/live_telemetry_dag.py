@@ -1,6 +1,11 @@
 from __future__ import annotations
 
 import pendulum
+import sys
+import os
+
+# Add the parent directory to the Python path to find the 'scripts' module
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from airflow.models.dag import DAG
 from airflow.operators.python import PythonOperator
@@ -21,7 +26,7 @@ with DAG(
         "retry_delay": timedelta(minutes=5),
     }
 ) as dag:
-    
+
     fetch_live_data_task = PythonOperator(
         task_id="fetch_and_load_live_data",
         python_callable=fetch_and_load_live_data,
