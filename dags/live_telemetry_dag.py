@@ -4,7 +4,8 @@ import pendulum
 import sys
 import os
 
-# Add the parent directory to the Python path to find the 'scripts' module
+# Add the project's root directory to the Python path
+# so that we can import from the 'scripts' folder.
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from airflow.models.dag import DAG

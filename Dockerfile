@@ -1,21 +1,18 @@
-# Use a specific version of the official Apache Airflow image for reproducibility
-FROM apache/airflow:2.8.1
+# Use a slim Python base image
+FROM python:3.11-slim
 
-# Switch to the root user to install new packages
-USER root
+# Set the working directory in the container
+WORKDIR /app
 
-# Install system dependencies if needed (for this project, none are required)
-# RUN apt-get update && apt-get install -y --no-install-recommends gcc
+# Copy and install the requirements
+COPY requirements.txt ./requirements.txt
+RUN pip install --no-cache-dir -r requirements.txt
 
-# Switch back to the airflow user before installing Python packages
-USER airflow
+# Copy the rest of the application code
+COPY . .
 
-# Install the required Python libraries for the FlightSense project
-# --no-cache-dir ensures the image is smaller
-RUN pip install --no-cache-dir \
-    "apache-airflow-providers-google==10.13.0" \
-    "pandas-gbq==0.22.0" \
-    "google-cloud-storage==2.16.0" \
-    "scikit-learn==1.5.0" \
-    "xgboost==2.0.3" \
-    "dbt-bigquery==1.8.0"
+# Expose the port that Cloud Run will use
+EXPOSE 8080
+
+# The command to run the Streamlit app
+ENTRYPOINT ["streamlit", "run", "app.py", "--server.port=8080", "--server.enableCORS=false"]
