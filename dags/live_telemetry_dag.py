@@ -18,7 +18,7 @@ from scripts.fetch_live_data import fetch_and_load_live_data
 with DAG(
     dag_id="live_telemetry_pipeline",
     start_date=pendulum.datetime(2023, 1, 1, tz="UTC"),
-    schedule_interval="*/10 * * * *", # Run every 10 minutes
+    schedule_interval="*/20 * * * *", # Run every 10 minutes
     catchup=False,
     tags=["flightsense"],
     default_args={
