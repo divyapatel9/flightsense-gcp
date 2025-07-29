@@ -1,0 +1,9 @@
+version: 2
+
+sources:
+  - name: flightsense
+    database: flightsense-project
+    schema: flightsense_data
+    tables:
+      - name: flight_history
+      - name: live_telemetry

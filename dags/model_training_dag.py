@@ -1,3 +1,7 @@
+import pendulum
+from airflow.models.dag import DAG
+from airflow.operators.python import PythonOperator
+
 import pandas as pd
 import joblib
 from google.cloud import storage
@@ -13,6 +17,9 @@ GCS_BUCKET_NAME = "flightsense-project-artifacts-1234"
 MODEL_FILE_NAME = "flight_delay_model.pkl"
 
 def train_and_upload_model():
+    """
+    This function is now inside the DAG file.
+    """
     print("--- Starting Model Training ---")
 
     sql = """
@@ -53,16 +60,26 @@ def train_and_upload_model():
     y_pred = pipeline.predict(X_test)
     print(classification_report(y_test, y_pred))
 
-    print(f"Saving model to {MODEL_FILE_NAME}...")
-    joblib.dump(pipeline, MODEL_FILE_NAME)
+    print(f"Saving model to /tmp/{MODEL_FILE_NAME}...")
+    joblib.dump(pipeline, f"/tmp/{MODEL_FILE_NAME}")
 
     print(f"Uploading model to GCS bucket: {GCS_BUCKET_NAME}...")
     storage_client = storage.Client(project=PROJECT_ID)
     bucket = storage_client.bucket(GCS_BUCKET_NAME)
     blob = bucket.blob(f'models/{MODEL_FILE_NAME}')
-    blob.upload_from_filename(MODEL_FILE_NAME)
+    blob.upload_from_filename(f"/tmp/{MODEL_FILE_NAME}")
     
     print("--- Model Training Complete ---")
 
-if __name__ == "__main__":
-    train_and_upload_model()
+with DAG(
+    dag_id="model_training_pipeline",
+    start_date=pendulum.datetime(2023, 1, 1, tz="UTC"),
+    schedule=None,  
+    catchup=False,
+    tags=["flightsense", "ml"],
+) as dag:
+    
+    train_model_task = PythonOperator(
+        task_id="train_and_upload_model",
+        python_callable=train_and_upload_model,
+    )

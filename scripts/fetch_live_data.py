@@ -3,12 +3,10 @@ import requests
 import pandas as pd
 from datetime import datetime
 
-# Define the project and table details for BigQuery
 PROJECT_ID = "flightsense-project"
 TABLE_ID = "flightsense_data.live_telemetry"
 
-# Define the columns based on the OpenSky Network API response
-# and our BigQuery schema.
+
 COLUMN_NAMES = [
     'icao24', 'callsign', 'origin_country', 'time_position', 'last_contact',
     'longitude', 'latitude', 'baro_altitude', 'on_ground', 'velocity',
@@ -24,7 +22,6 @@ def fetch_and_load_live_data():
     print("Starting live data fetch...")
     
     try:
-        # Make a GET request to the OpenSky Network API
         url = "https://opensky-network.org/api/states/all"
         response = requests.get(url, timeout=30)
         response.raise_for_status()  # Raise an exception for bad status codes (4xx or 5xx)
@@ -35,23 +32,18 @@ def fetch_and_load_live_data():
             print("No flight data received from API.")
             return
 
-        # Create a Pandas DataFrame from the raw data
         df = pd.DataFrame(data['states'], columns=COLUMN_NAMES)
         print(f"Fetched {len(df)} flight records.")
 
-        # --- Data Cleaning and Transformation ---
-        # Select only the columns we need for our table
+       
         df = df[['icao24', 'callsign', 'longitude', 'latitude', 'baro_altitude', 'velocity', 'on_ground']]
 
-        # Clean up data: trim whitespace from callsigns and filter out nulls
         df['callsign'] = df['callsign'].str.strip()
         df = df[df['callsign'] != '']
         df = df.dropna(subset=['callsign'])
         
-        # Add the ingestion timestamp
         df['ingestion_timestamp'] = datetime.utcnow()
 
-        # --- Load to BigQuery ---
         print(f"Loading {len(df)} cleaned records into BigQuery...")
         df.to_gbq(
             destination_table=TABLE_ID,

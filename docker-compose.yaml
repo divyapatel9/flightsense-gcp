@@ -1,32 +1,20 @@
-# Docker Compose version
 version: '3.8'
 
-# Define default environment variables
 x-airflow-common: &airflow-common
-  # Build the image from the Dockerfile in the current directory
   build: .
-  # Define environment variables common to all Airflow services
   environment:
     &airflow-common-env
-    # Airflow needs to know which user to run as
-    # The value '50000' is a safe default to avoid permission issues
     AIRFLOW_UID: '50000'
-    # Define the Airflow executor. LocalExecutor is simple and fits on a small VM
     AIRFLOW__CORE__EXECUTOR: LocalExecutor
-    # Turn off the example DAGs for a cleaner interface
     AIRFLOW__CORE__LOAD_EXAMPLES: 'false'
-    # Define the database connection string
     AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://airflow:airflow@postgres/airflow
-  # Mount local folders into the containers so Airflow can access them
   volumes:
     - ./dags:/opt/airflow/dags
     - ./logs:/opt/airflow/logs
     - ./plugins:/opt/airflow/plugins
-    - ./scripts:/opt/airflow/scripts # Our custom scripts folder
+    - ./scripts:/opt/airflow/scripts
 
-# Define all the services needed for Airflow
 services:
-  # The PostgreSQL database for Airflow metadata
   postgres:
     image: 'postgres:13'
     container_name: flightsense-postgres
@@ -37,31 +25,28 @@ services:
     ports:
       - "5432:5432"
 
-  # The Airflow webserver (the UI)
   airflow-webserver:
-    <<: *airflow-common # Inherit common settings
+    <<: *airflow-common
     container_name: flightsense-webserver
-    command: webserver # Command to start the webserver
+    command: webserver
     ports:
-      - "8080:8080" # Expose the UI on port 8080
+      - "8080:8080"
     depends_on:
       - postgres
       - airflow-init
     restart: always
 
-  # The Airflow scheduler (triggers DAGs)
   airflow-scheduler:
-    <<: *airflow-common # Inherit common settings
+    <<: *airflow-common
     container_name: flightsense-scheduler
-    command: scheduler # Command to start the scheduler
+    command: scheduler
     depends_on:
       - postgres
       - airflow-init
     restart: always
 
-  # The Airflow triggerer (for deferrable operators)
   airflow-triggerer:
-    <<: *airflow-common # Inherit common settings
+    <<: *airflow-common
     container_name: flightsense-triggerer
     command: triggerer
     depends_on:
@@ -69,12 +54,10 @@ services:
       - airflow-init
     restart: always
 
-  # One-time initialization service
   airflow-init:
-    <<: *airflow-common # Inherit common settings
+    <<: *airflow-common
     container_name: flightsense-init
     entrypoint: /bin/bash
-    # This command initializes the database and creates a default admin user
     command:
       - -c
       - |

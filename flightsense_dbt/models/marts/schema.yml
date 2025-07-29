@@ -1,0 +1,11 @@
+version: 2
+
+models:
+  - name: fct_flight_latest_positions
+    description: "A model containing the single latest position for each active flight callsign."
+    columns:
+      - name: callsign
+        description: "The unique callsign of the flight."
+        tests:
+          - unique
+          - not_null
